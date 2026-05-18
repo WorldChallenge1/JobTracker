@@ -1,0 +1,18 @@
+schema: spec-driven
+name: fastapi-application-implementation
+title: Feature-based FastAPI Application Implementation
+status: open
+artifacts:
+  proposal:
+    status: done
+  design:
+    status: done
+    dependencies:
+      - proposal
+  tasks:
+    status: done
+    dependencies:
+      - design
+apply:
+  requires:
+    - tasks

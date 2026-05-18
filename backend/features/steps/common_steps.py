@@ -37,7 +37,7 @@ def step_api_running(context):
 # Application fixtures
 # ---------------------------------------------------------------------------
 
-@given("an application exists with")
+@given("an application exists with:")
 def step_application_exists(context):
     payload = {row["field"]: row["value"] for row in context.table}
     response = requests.post(f"{BASE_URL}/applications", json=payload)
@@ -55,11 +55,11 @@ def step_application_exists_with_status(context, status):
     context.application_id = context.application["id"]
 
 
-@given("the following applications exist")
+@given("the following applications exist:")
 def step_multiple_applications_exist(context):
     context.applications = []
     for row in context.table:
-        payload = dict(row)
+        payload = {heading: row[heading] for heading in row.headings}
         response = requests.post(f"{BASE_URL}/applications", json=payload)
         assert response.status_code == 201, response.text
         context.applications.append(response.json())
@@ -78,7 +78,7 @@ def step_second_application_exists(context):
 # Interview fixtures
 # ---------------------------------------------------------------------------
 
-@given("an interview exists for the application with")
+@given("an interview exists for the application with:")
 def step_interview_exists(context):
     payload = {row["field"]: row["value"] for row in context.table}
     app_id = context.application_id
@@ -90,7 +90,7 @@ def step_interview_exists(context):
     context.interview_id = context.interview["id"]
 
 
-@given("an interview exists for the second application with")
+@given("an interview exists for the second application with:")
 def step_interview_exists_second_app(context):
     payload = {row["field"]: row["value"] for row in context.table}
     app_id = context.second_application_id
@@ -102,12 +102,12 @@ def step_interview_exists_second_app(context):
     context.second_interview_id = context.second_interview["id"]
 
 
-@given("the following interviews exist for the application")
+@given("the following interviews exist for the application:")
 def step_multiple_interviews_exist(context):
     context.interviews = []
     app_id = context.application_id
     for row in context.table:
-        payload = dict(row)
+        payload = {heading: row[heading] for heading in row.headings}
         response = requests.post(
             f"{BASE_URL}/applications/{app_id}/interviews", json=payload
         )
@@ -137,7 +137,7 @@ def step_get(context, url_template):
     context.response = requests.get(_resolve_url(context, url_template))
 
 
-@when('I send a POST request to "{url_template}" with body')
+@when('I send a POST request to "{url_template}" with body:')
 def step_post(context, url_template):
     payload = json.loads(context.text)
     context.response = requests.post(
@@ -145,7 +145,7 @@ def step_post(context, url_template):
     )
 
 
-@when('I send a PATCH request to "{url_template}" with body')
+@when('I send a PATCH request to "{url_template}" with body:')
 def step_patch(context, url_template):
     payload = json.loads(context.text)
     context.response = requests.patch(
@@ -174,15 +174,24 @@ def step_status_code(context, expected_code):
 # Assertions — body content
 # ---------------------------------------------------------------------------
 
-@then("the response body should contain")
+@then("the response body should contain:")
 def step_body_contains_table(context):
     body = context.response.json()
-    for row in context.table:
-        field, expected = row["field"], row["value"]
-        actual = body.get(field)
-        assert str(actual) == str(expected), (
-            f"Field '{field}': expected '{expected}', got '{actual}'"
-        )
+    if isinstance(body, dict):
+        for row in context.table:
+            field, expected = row["field"], row["value"]
+            actual = body.get(field)
+            assert str(actual) == str(expected), (
+                f"Field '{field}': expected '{expected}', got '{actual}'"
+            )
+    elif isinstance(body, list):
+        headings = context.table.headings
+        for row in context.table:
+            expected = {heading: row[heading] for heading in headings}
+            assert any(
+                all(str(item.get(k)) == str(v) for k, v in expected.items())
+                for item in body
+            ), f"Response does not contain entry matching {expected}"
 
 
 @then('the response body field "{field}" should equal "{expected}"')
