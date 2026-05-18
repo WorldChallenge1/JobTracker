@@ -72,7 +72,9 @@ def update(session: Session, id: int, data: dict) -> Application:
         raise HTTPException(status_code=404, detail="Application not found")
     if "status" in data and data["status"] is not None:
         _validate_status_transition(application.status, data["status"])
-    return application_repository.update(session, id, data)
+    result = application_repository.update(session, id, data)
+    assert result is not None
+    return result
 
 
 def delete(session: Session, id: int):

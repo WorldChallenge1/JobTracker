@@ -20,7 +20,8 @@ def create_application(
     body: ApplicationCreate,
     session: Session = Depends(get_session),
 ) -> ApplicationPublic:
-    return application_service.create(session, body.model_dump())
+    created = application_service.create(session, body.model_dump())
+    return ApplicationPublic.model_validate(created)
 
 
 @router.get("/applications")
@@ -30,7 +31,11 @@ def list_applications(
     location: Optional[str] = None,
     session: Session = Depends(get_session),
 ) -> list[ApplicationPublic]:
-    return application_service.list_all(session, status, company, location)
+    application_list = application_service.list_all(session, status, company, location)
+    return [
+        ApplicationPublic.model_validate(application)
+        for application in application_list
+    ]
 
 
 @router.get("/applications/summary")
@@ -45,7 +50,8 @@ def get_application(
     id: int,
     session: Session = Depends(get_session),
 ) -> ApplicationPublic:
-    return application_service.get_by_id(session, id)
+    found_application = application_service.get_by_id(session, id)
+    return ApplicationPublic.model_validate(found_application)
 
 
 @router.patch("/applications/{id}")
@@ -54,7 +60,10 @@ def update_application(
     body: ApplicationUpdate,
     session: Session = Depends(get_session),
 ) -> ApplicationPublic:
-    return application_service.update(session, id, body.model_dump(exclude_none=True))
+    updated_application = application_service.update(
+        session, id, body.model_dump(exclude_none=True)
+    )
+    return ApplicationPublic.model_validate(updated_application)
 
 
 @router.delete("/applications/{id}", status_code=status.HTTP_204_NO_CONTENT)

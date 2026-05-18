@@ -35,7 +35,9 @@ def update(session: Session, application_id: int, id: int, data: dict) -> Interv
     interview = interview_repository.get_by_id(session, id)
     if not interview or interview.application_id != application_id:
         raise HTTPException(status_code=404, detail="Interview not found")
-    return interview_repository.update(session, id, data)
+    result = interview_repository.update(session, id, data)
+    assert result is not None
+    return result
 
 
 def delete(session: Session, application_id: int, id: int):
